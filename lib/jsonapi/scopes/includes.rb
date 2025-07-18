@@ -13,19 +13,29 @@ module Jsonapi
         @allowed_includes = fields
       end
 
+      def allowed_preloades(*fields)
+        @allowed_preloades = fields
+      end
+
       def apply_include(params = {}, options = { allowed: [] })
         records = all
         fields = params.dig(:include).to_s
 
         return records if fields.blank?
 
-        allowed_fields = (Array.wrap(options[:allowed]).presence || @allowed_includes).map(&:to_s)
+        all_allowed_relationships = (@allowed_includes + @allowed_preloades).uniq
+        allowed_fields = (Array.wrap(options[:allowed]).presence || all_allowed_relationships).map(&:to_s)
 
         fields.split(',').each do |field|
           raise InvalidAttributeError, "#{field} is not valid as include attribute." unless allowed_fields.include?(field)
         end
 
-        records.includes(convert_includes_as_hash(fields))
+        preloaded_fields = fields & allowed_preloades
+        included_fields = ( fields - preloaded_fields ) & allowed_includes
+
+        records
+          .includes(convert_includes_as_hash(included_fields))
+          .preload(convert_includes_as_hash(preluded_fields))
       end
 
       private
