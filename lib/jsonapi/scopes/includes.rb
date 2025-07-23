@@ -6,6 +6,7 @@ module Jsonapi
 
     included do
       @allowed_includes ||= []
+      @allowed_preloades ||= []
     end
 
     module ClassMethods
