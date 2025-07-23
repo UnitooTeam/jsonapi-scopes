@@ -6,11 +6,16 @@ module Jsonapi
 
     included do
       @allowed_includes ||= []
+      @allowed_preloades ||= []
     end
 
     module ClassMethods
       def allowed_includes(*fields)
         @allowed_includes = fields
+      end
+
+      def allowed_preloades(*fields)
+        @allowed_preloades = fields
       end
 
       def apply_include(params = {}, options = { allowed: [] })
@@ -19,19 +24,29 @@ module Jsonapi
 
         return records if fields.blank?
 
-        allowed_fields = (Array.wrap(options[:allowed]).presence || @allowed_includes).map(&:to_s)
+        all_allowed_relationships = (@allowed_includes + @allowed_preloades).uniq
+        allowed_fields = (Array.wrap(options[:allowed]).presence || all_allowed_relationships).map(&:to_s)
 
-        fields.split(',').each do |field|
-          raise InvalidAttributeError, "#{field} is not valid as include attribute." unless allowed_fields.include?(field)
+        a_fields = fields.split(',')
+        a_fields.each do |field|
+          unless allowed_fields.include?(field)
+            raise InvalidAttributeError,
+                  "#{field} is not valid as include attribute."
+          end
         end
 
-        records.includes(convert_includes_as_hash(fields))
+        preloaded_fields = (a_fields & @allowed_preloades) || []
+        included_fields = (a_fields - preloaded_fields) & @allowed_includes
+
+        records
+          .includes(convert_includes_as_hash(included_fields))
+          .preload(convert_includes_as_hash(preloaded_fields))
       end
 
       private
 
       def convert_includes_as_hash(includes)
-        includes.split(',').map(&:squish).each_with_object({}) do |value, hash|
+        includes.map(&:squish).each_with_object({}) do |value, hash|
           params = value.split('.')
           key = params.first.to_sym
           hash[key] ||= {}
@@ -40,7 +55,7 @@ module Jsonapi
 
           remaining_fields = params[1..-1].join('.')
 
-          hash[key].merge!(convert_includes_as_hash(remaining_fields))
+          hash[key].merge!(convert_includes_as_hash(remaining_fields.split(',')))
         end
       end
     end
