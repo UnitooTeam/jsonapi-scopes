@@ -55,7 +55,7 @@ module Jsonapi
 
           remaining_fields = params[1..-1].join('.')
 
-          hash[key].merge!(convert_includes_as_hash(remaining_fields))
+          hash[key].merge!(convert_includes_as_hash(remaining_fields.split(',')))
         end
       end
     end
