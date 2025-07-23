@@ -27,22 +27,26 @@ module Jsonapi
         all_allowed_relationships = (@allowed_includes + @allowed_preloades).uniq
         allowed_fields = (Array.wrap(options[:allowed]).presence || all_allowed_relationships).map(&:to_s)
 
-        fields.split(',').each do |field|
-          raise InvalidAttributeError, "#{field} is not valid as include attribute." unless allowed_fields.include?(field)
+        a_fields = fields.split(',')
+        a_fields.each do |field|
+          unless allowed_fields.include?(field)
+            raise InvalidAttributeError,
+                  "#{field} is not valid as include attribute."
+          end
         end
 
-        preloaded_fields = fields & allowed_preloades
-        included_fields = ( fields - preloaded_fields ) & allowed_includes
+        preloaded_fields = (a_fields & @allowed_preloades) || []
+        included_fields = (a_fields - preloaded_fields) & @allowed_includes
 
         records
           .includes(convert_includes_as_hash(included_fields))
-          .preload(convert_includes_as_hash(preluded_fields))
+          .preload(convert_includes_as_hash(preloaded_fields))
       end
 
       private
 
       def convert_includes_as_hash(includes)
-        includes.split(',').map(&:squish).each_with_object({}) do |value, hash|
+        includes.map(&:squish).each_with_object({}) do |value, hash|
           params = value.split('.')
           key = params.first.to_sym
           hash[key] ||= {}
