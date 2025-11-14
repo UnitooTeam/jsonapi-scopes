@@ -21,11 +21,15 @@ module Jsonapi
 
         allowed_fields = (Array.wrap(options[:allowed]).presence || @allowed_includes).map(&:to_s)
 
-        fields.split(',').each do |field|
+        a_fields = fields.split(',')
+        a_fields.each do |field|
           raise InvalidAttributeError, "#{field} is not valid as include attribute." unless allowed_fields.include?(field)
         end
 
-        records.includes(convert_includes_as_hash(fields))
+        preload_fields = a_fields.select { |field| reflect_on_association(field).polymorphic? }
+        include_fields = a_fields - preload_fields
+        records.includes(convert_includes_as_hash(include_fields.join(',')))
+        records.preload(convert_includes_as_hash(preload_fields.join(',')))
       end
 
       private
