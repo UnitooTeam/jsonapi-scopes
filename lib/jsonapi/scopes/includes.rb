@@ -28,7 +28,7 @@ module Jsonapi
 
         preload_fields = a_fields.select { |field| reflect_on_association(field)&.polymorphic? }
         include_fields = a_fields - preload_fields
-        records.includes(convert_includes_as_hash(include_fields.join(',')))
+        records = records.includes(convert_includes_as_hash(include_fields.join(',')))
         records.preload(convert_includes_as_hash(preload_fields.join(',')))
       end
 
