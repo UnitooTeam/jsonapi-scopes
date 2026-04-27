@@ -13,6 +13,8 @@ module Jsonapi
         @allowed_includes = fields
       end
 
+      def allowed_includes_list = @allowed_includes
+
       def apply_include(params = {}, options = { allowed: [] })
         records = all
         fields = params.dig(:include).to_s

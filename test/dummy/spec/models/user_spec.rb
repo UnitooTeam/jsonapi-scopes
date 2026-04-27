@@ -11,6 +11,26 @@ RSpec.describe User, type: :model do
     it 'responds to allowed_includes' do
       expect(User).to respond_to(:allowed_includes)
     end
+
+    it 'responds to allowed_includes_list' do
+      expect(User).to respond_to(:allowed_includes_list)
+    end
+  end
+
+  describe '#allowed_includes_list' do
+    after do
+      User.allowed_includes 'contact', 'posts.contact.users', 'posts', 'posts.user'
+    end
+
+    it 'returns the configured allowed includes' do
+      expect(User.allowed_includes_list).to eq(['contact', 'posts.contact.users', 'posts', 'posts.user'])
+    end
+
+    it 'reflects updates made through allowed_includes' do
+      User.allowed_includes 'contact', 'posts'
+
+      expect(User.allowed_includes_list).to eq(['contact', 'posts'])
+    end
   end
 
   describe '#apply_include' do
